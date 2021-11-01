@@ -1,9 +1,7 @@
 ################################################################################
 # ADNI NIGHTINGALE (NG) LONGITUDINAL ## V001 ## MAFF ###########################
-# F004 LINEAR MIXED MODELS:
-#    + mod1 with all vars
-#    + mod2 prunned mod1
-#    + mod3 prunned mod2
+# F005 LINEAR MIXED MODELS:
+#    + test multi-phenotypes
 # ---------------------------------------------------------------------------- #
 
 rm(list = ls())
@@ -16,14 +14,25 @@ library(parallel)
 source("./CODE/f_utils.r")
 
 metDat <- readRDS("./CLEAN_DATA/ng_data_matrix.rds")
+metDat$PHC_EXF <- as.numeric(metDat$PHC_EXF)
+metDat$PHC_MEM <- as.numeric(metDat$PHC_MEM)
+metDat$PHC_LAN <- as.numeric(metDat$PHC_LAN)
 
 # PARALLEL IMPLEMENTATION LMX MODELS ----------------------------------------- #
+# phenotypes = list("VSBPSYS", "VSBPDIA", "DX", "MMSCORE", "PHC_MEM", "PHC_EXF", "PHC_LAN")
+# names(phenotypes) = c("BPSYS", "BPDIA", "DX", "MMSE", "MEMORY", "EXECUTIVE", "LANGUAGE")
+phenotypes = list("PHC_MEM", "PHC_EXF", "PHC_LAN")
+names(phenotypes) = c("MEMORY", "EXECUTIVE", "LANGUAGE")
+
+for(pheno in 1:length(phenotypes)) {
+  
 ncores = 8
-fixVar = c("GENDER*DX","AGE","EDUCAT","BMI","RACCAT","ALCH","SMOK","VISIT_NUM",
+fixVar = c(phenotypes[[pheno]],
+           "GENDER","AGE","EDUCAT","BMI","RACCAT","ALCH","SMOK","VISIT_NUM",
            grep("^meds", colnames(metDat), value = T)[-15],
            colnames(metDat)[272:289])
 refVar = "(1 + VISIT_NUM | RID) + (1 + VISIT_NUM | SITEID)"
-varMet <- colnames(metDat)[4:253]
+varMet = colnames(metDat)[4:253]
 
 lsFit <- mclapply(varMet,
                   mc.cores = ncores,
@@ -52,26 +61,15 @@ lsFit <- mclapply(varMet,
                                             bic = BIC(fit), 
                                             r2 = rsq::rsq(fit)$model, 
                                             sample.size = nrow(metDat),
-                                            metabolite = paste0(sMet)
+                                            metabolite = paste0(sMet),
+                                            phenotype = phenotypes[[pheno]]
                     )
-                    raef <- subset(as.data.frame(ranef(fit)), 
-                             term == "VISIT_NUM" & grpvar == "RID")
                     
-                    lsRes <- list(raef = raef, resCoef = tbldfCoef)
-                    
-                    return(lsRes)
+                    return(tbldfCoef)
                   } )
 names(lsFit) <- varMet
-modCoef = data.frame(do.call(rbind, lapply(lsFit, function(x) x$resCoef)),
-  row.names = NULL
-)
-modRanef = data.frame(
-  metabolite = gsub("\\..*", "", rownames(
-    do.call(rbind, lapply(lsFit, function(x) x$raef)))),
-  do.call(rbind, lapply(lsFit, function(x) x$raef)),
-  row.names = NULL
-)
+modCoef = data.frame(do.call(rbind, lsFit), row.names = NULL)
 
-saveRDS(modCoef, "./RESULTS/lxm_ng_longitudinal_gender_coef.rds")
-saveRDS(modRanef, "./RESULTS/lxm_ng_longitudinal_gender_ranef.rds")
+saveRDS(modCoef, paste0("./RESULTS/lxm_coef_", names(phenotypes[pheno]), ".rds"))
+}
 # ---------------------------------------------------------------------------- #
