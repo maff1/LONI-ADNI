@@ -87,7 +87,8 @@ f_lag_date <- function(met, demog, vitals, medhist, mmse, adsp, meds) {
   medhist <- medhist[medhist$RID %in% unique(ng$RID),]
   na.medhist = colSums(is.na(medhist)/nrow(medhist)*100)
   medhist = medhist[colnames(medhist) %in% 
-                      names(na.medhist)[na.medhist == 0][-c(4,5,20:22,24:25,27:29,32:33)]]
+                      names(na.medhist)[na.medhist == 0]]
+  medhist <- medhist[, -c(3:5,24:25)]
   medhist$USERDATE <- as.Date(medhist$USERDATE, "%Y-%m-%d")
   print(anyNA(medhist))
   # -------------------------------------------------------------------------- #
@@ -150,15 +151,18 @@ f_lag_date <- function(met, demog, vitals, medhist, mmse, adsp, meds) {
     data.frame(RID = as.numeric(trimws(x[, c("RID")], 
                                        which = "both")), x[, 2:length(x)]))
   
-  res = lapply(ls.vars, function(x) data.frame(x[, 1:length(x)], JOINDATE = if(
+  res = lapply(ls.vars, function(x) data.frame(x[, 1:length(x)], 
+    JOINDATE = if(
     isTRUE(colnames(x)[colnames(x) %in% c("EXAMDATE")] == "EXAMDATE")) {
-    JOINDATE = as.Date(x[, c("EXAMDATE")], "%Y-%m-%d")} else {
+    JOINDATE = as.Date(x[, c("EXAMDATE")], "%Y-%m-%d")} 
+    else {
       JOINDATE = as.Date(x[, c("USERDATE")], "%Y-%m-%d")}, EVENTDATE = if(
         isTRUE(colnames(x)[colnames(x) %in% c("EXAMDATE")] == "EXAMDATE")) {
-        EVENTDATE = as.Date(x[, c("EXAMDATE")], "%Y-%m-%d")} else {
-          EVENTDATE = as.Date(x[, c("USERDATE")], "%Y-%m-%d")}
+        EVENTDATE = as.Date(x[, c("EXAMDATE")], "%Y-%m-%d")} 
+    else {
+        EVENTDATE = as.Date(x[, c("USERDATE")], "%Y-%m-%d")}
   )
-  )
+)
   
   dt = lapply(res, function(x) setDT(x, key = c("RID","JOINDATE")))
   dt.met = dt$met
@@ -189,8 +193,46 @@ f_lag_date <- function(met, demog, vitals, medhist, mmse, adsp, meds) {
   setDF(dt.out)
   dt.out <- dt.out[, colnames(dt.out) %nin% 
                      grep("i.viscode", colnames(dt.out), ignore.case = T, value = T)]
-  saveRDS(dt.out, "./CLEAN_DATA/ng_data_matrix.rds")
-  return(dt.out)
+  df.out <- dt.out[complete.cases(dt.out),]
+  print(paste0("removed................", 
+               length(unique(dt.out$RID)) - length(unique(df.out$RID)), " RID")
+  )
+  
+  df.out$VISCODE2 <- factor(df.out$VISCODE2, 
+                            levels = c("bl","m06","m12","m18","m24","m36","m48",
+                                       "m60","m72","m84","m96","m108","m120"),
+                            labels = c("bl","m06","m12","m18","m24","m36","m48",
+                                       "m60","m72","m84","m96","m108","m120"))
+  df.out$VISIT_NUM <- as.numeric(df.out$VISCODE2)
+  
+  df.out$demog.PTGENDER <- factor(df.out$demog.PTGENDER, 
+                                  levels = c(0,1), labels = c("F", "M"))
+  df.out$adsp.DX <- factor(df.out$adsp.DX, 
+                                  levels = c(1,2,3), labels = c("CTR", "MCI", "ALZ"))
+  # 1=American Indian or Alaskan Native; 2=Asian; 
+  # 3=Native Hawaiian or Other Pacific Islander; 4=Black or African American; 
+  # 5=White; 6=More than one race; 7=Unknown
+  # recode RACCAT
+  df.out$demog.PTRACCAT <- factor(df.out$demog.PTRACCAT, 
+                                  levels = c(1,2,3,4,5,6,7), 
+                                  labels = c("other", "asian", 
+                                             "other", "black", "white",
+                                             "other", "other"))
+  # 1=Hispanic or Latino; 2=Not Hispanic or Latino; 3=Unknown
+  df.out$demog.PTETHCAT <- factor(df.out$demog.PTETHCAT, 
+                           levels = c(1,2,3), 
+                           labels = c("hispanic", "not hispanic", "unknown"))
+  
+  df.out <- df.out[, colnames(df.out) %nin% 
+                     grep("USERDATE|i.EXAMDATE", colnames(df.out), value = T)]
+  colnames(df.out) <- gsub("medhist\\.MH[0-9]{1,3}|medhist\\.|adsp\\.|demog\\.PT|
+                         vitals\\.|mmse\\.|
+                         vitals\\.VS|demog\\.|MET\\.|vitals\\.","", 
+                           colnames(df.out), perl = TRUE)
+  
+  saveRDS(df.out, "./CLEAN_DATA/ng_data_matrix.rds")
+  
+  return(df.out)
 }
 
 ng = f_lag_date(met = "./CLEAN_DATA/imputed_ng_longitudinal.rds", 
