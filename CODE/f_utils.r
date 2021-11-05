@@ -38,3 +38,10 @@ return(data_clean_mh)
 }
 
 `%nin%` <- Negate(`%in%`)
+
+fold_cv=function(data,k){
+  folds=cvTools::cvFolds(nrow(data),K=k)
+  invisible(folds)
+}
+
+zscaleFunc <- function(x){(x-mean(x, na.rm = T))/sd(x, na.rm = T)}

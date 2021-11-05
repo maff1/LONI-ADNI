@@ -13,8 +13,35 @@ selCols <- as.formula(
   )
 )
 
+colsKeep <- c(
+  "AGE",
+  "GENDER",
+  "DX",
+  "RACCAT",
+  "ETHCAT",
+  "EDUCAT",
+  "BMI",
+  "PHC_MEM",
+  "PHC_EXF",
+  "PHC_LAN",
+  "MMSCORE",
+  "VSBPSYS",
+  "VSBPDIA")
+fCols <- c("ALCH","DRUG","SMOK","MARRY")
+metDat[fCols] <- lapply(metDat[fCols], as.factor)
+selCols <- as.formula(
+  paste("VISCODE2", paste(colsKeep,
+                          collapse = "+"), sep = "~"
+  )
+)
+
+mycontrols  <- tableby.control(test=TRUE, total=TRUE,
+                               numeric.test="anova", cat.test="chisq",
+                               numeric.stats=c("meansd"),
+                               cat.stats=c("countpct"))
 tbl <- tableby(formula = selCols, 
-               data = metDat) 
+               data = metDat,
+               control = mycontrols) 
 tbl1 = summary(tbl, title = tblTitle)
 write2html(tbl1, 
 file = "/t1-data/project/psychdementia/mfernand/PROJECTS/LONI-ADNI/RESULTS/tbl_cohort.html", 
