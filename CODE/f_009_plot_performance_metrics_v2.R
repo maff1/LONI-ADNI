@@ -4,6 +4,7 @@
 #    + BY PHENOTYPE
 # ---------------------------------------------------------------------------- #
 
+rm(list = ls())
 library(ggplot2)
 library(data.table)
 library(tidyverse)
@@ -14,7 +15,32 @@ library(gridBase)
 
 lsPheno <- list.files(path = "./RESULTS", pattern = "_cv10", full.names = TRUE)
 names(lsPheno) <- gsub("_cv10_lmx.rds", "", basename(lsPheno))
-temp = readRDS(lsPheno[1])[, c(301:307)]
+lsTemp = lapply(lsPheno, function(x) {
+  df <- readRDS(x)[, c(301:307)] %>%
+    group_by(metabolites) %>%
+    dplyr::summarize(AIC = mean(AIC, na.rm=TRUE),
+                     R2 = mean(R2, na.rm=TRUE), 
+                     RMSE = mean(RMSE, na.rm=TRUE)
+    )
+    return(as.data.frame(df))
+  }
+)
+
+lsAIC = lapply(lsTemp, function(x) data.frame(x["metabolites"], x["AIC"]))
+lsR2 = lapply(lsTemp, function(x) data.frame(x["metabolites"], x["R2"]))
+lsRMSE = lapply(lsTemp, function(x) data.frame(x["metabolites"], x["RMSE"]))
+# ---------------------------------------------------------------------------- #
+
+f_rename_merge <- function(X) {
+for(i in 1:length(lsAIC)) {
+  colnames(lsAIC[[i]])[2] <- paste0(colnames(lsAIC[[i]])[2], "_", names(lsAIC)[i])
+  }
+}
+
+mergedDF = Reduce(function(...) merge(..., by = "metabolites", sort = FALSE), lsAIC)
+colnames(mergedDF) <- gsub("AIC_", "", colnames(mergedDF))
+rownames(mergedDF) <- mergedDF$metabolites; mergedDF <- mergedDF[, -1]
+# ---------------------------------------------------------------------------- #
 
 metAnn <- read.csv("./DATA/NG-annotations.csv")
 met <- metAnn[match(toupper(unique(temp$metabolites)), toupper(metAnn$CSV_column_name)),]
@@ -62,7 +88,7 @@ lgd_r2 = Legend(title = "r2", col_fun = col_funR2)
 lgd_rmse = Legend(title = "RMSE", col_fun = col_funRMSE)
 # ---------------------------------------------------------------------------- #
 
-pdf(file = "./RESULTS/circosMetrics_BPDIA.pdf", width = 9, height = 8)
+pdf(file = "./RESULTS/circosMetrics_AIC.pdf", width = 9, height = 8)
 plot.new()
 circle_size = unit(1, "snpc")
 pushViewport(viewport(x = 0, y = 0.5, width = circle_size, height = circle_size,

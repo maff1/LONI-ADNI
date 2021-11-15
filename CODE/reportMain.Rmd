@@ -1,0 +1,29 @@
+
+```{r, setup, include=FALSE, echo=FALSE}
+library(bookdown)
+knitr::opts_knit$set(root.dir = "/t1-data/project/psychdementia/mfernand/PROJECTS/LONI-ADNI")
+```
+
+```{r, include=FALSE, echo=FALSE}
+authorName = readLines("./RESULTS/author.txt", encoding = "UTF-8")[1]
+authorEmail = readLines("./RESULTS/author.txt", encoding = "UTF-8")[2]
+authorAffiliation = readLines("./RESULTS/author.txt", encoding = "UTF-8")[3]
+```
+
+---
+title: "Genetic correlations in targeted metabolome analyses"
+author:
+- name: `r authorName`
+  email: `r authorEmail`
+  affiliation: `r authorAffiliation`
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_notebook
+---
+
+## Introduction
+## Methods
+## Results
+## Discussion
+## Conclusion
+## References
+## Supporting Material
