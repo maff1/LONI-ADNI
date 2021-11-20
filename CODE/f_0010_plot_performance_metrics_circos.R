@@ -63,8 +63,8 @@ lgd_r2 = Legend(title = "r2", col_fun = col_funR2)
 lgd_rmse = Legend(title = "RMSE", col_fun = col_funRMSE)
 # ---------------------------------------------------------------------------- #
 
-pdf(file = "./RESULTS/circosMetrics_AIC.pdf", width = 9, height = 8)
-circos.par(gap.after = c(2, 2, 2, 15, 2))
+pdf(file = "./RESULTS/circosMetrics_AIC_split.pdf", width = 9, height = 8)
+circos.par(gap.after = c(2, 15))
 circos.heatmap(mergedDF, col = col_funAIC, 
                bg.border = "black", 
                bg.lwd = 1, 
@@ -74,7 +74,7 @@ circos.heatmap(mergedDF, col = col_funAIC,
                cell.lwd = 0.25,
                rownames.side = "outside",
                track.height = 0.1,
-               split = split,
+               split = split2,
                show.sector.labels = TRUE,
                dend.side = "inside",
                dend.callback = function(dend, m, si) {
@@ -84,7 +84,7 @@ circos.heatmap(mergedDF, col = col_funAIC,
 
 circos.track(track.index = 2, 
              panel.fun = function(x, y) {
-  if(CELL_META$sector.numeric.index == 4) {
+  if(CELL_META$sector.numeric.index == 2) {
     cn = rev(colnames(mergedDF))
     n = length(cn)
     circos.text(rep(CELL_META$cell.xlim[2], n) + convert_x(1, "mm"),
@@ -105,9 +105,13 @@ mergedR2 = Reduce(function(...) merge(..., by = "metabolites", sort = FALSE), ls
 colnames(mergedR2) <- gsub("R2_", "", colnames(mergedR2))
 rownames(mergedR2) <- mergedR2$metabolites; mergedR2 <- mergedR2[, -1]
 
+split2 = as.factor(ifelse(
+  rownames(mergedR2) %in% grep("_", rownames(mergedR2), value = TRUE), "b", "a"
+  )
+)
 # ---------------------------------------------------------------------------- #
 
-pdf(file = "./RESULTS/circosMetrics_R2.pdf", width = 9, height = 8)
+pdf(file = "./RESULTS/circosMetrics_R2_split.pdf", width = 9, height = 8)
 circos.par(gap.after = c(2, 2, 2, 15, 2))
 circos.heatmap(mergedR2, col = col_funR2, 
                bg.border = "black", 
@@ -118,7 +122,7 @@ circos.heatmap(mergedR2, col = col_funR2,
                cell.lwd = 0.25,
                rownames.side = "outside",
                track.height = 0.1,
-               split = split,
+               split = split2,
                show.sector.labels = TRUE,
                dend.side = "inside",
                dend.callback = function(dend, m, si) {
@@ -151,8 +155,8 @@ rownames(mergedR2) <- mergedR2$metabolites; mergedR2 <- mergedR2[, -1]
 
 # ---------------------------------------------------------------------------- #
 
-pdf(file = "./RESULTS/circosMetrics_R2.pdf", width = 9, height = 8)
-circos.par(gap.after = c(2, 2, 2, 15, 2))
+pdf(file = "./RESULTS/circosMetrics_R2_split.pdf", width = 9, height = 8)
+circos.par(gap.after = c(2, 15))
 circos.heatmap(mergedR2, col = col_funR2, 
                bg.border = "black", 
                bg.lwd = 1, 
@@ -162,7 +166,7 @@ circos.heatmap(mergedR2, col = col_funR2,
                cell.lwd = 0.25,
                rownames.side = "outside",
                track.height = 0.1,
-               split = split,
+               split = split2,
                show.sector.labels = TRUE,
                dend.side = "inside",
                dend.callback = function(dend, m, si) {
@@ -172,7 +176,7 @@ circos.heatmap(mergedR2, col = col_funR2,
 
 circos.track(track.index = 2, 
              panel.fun = function(x, y) {
-               if(CELL_META$sector.numeric.index == 4) {
+               if(CELL_META$sector.numeric.index == 2) {
                  cn = rev(colnames(mergedR2))
                  n = length(cn)
                  circos.text(rep(CELL_META$cell.xlim[2], n) + convert_x(1, "mm"),
@@ -193,8 +197,8 @@ mergedRMSE = Reduce(function(...) merge(..., by = "metabolites", sort = FALSE), 
 colnames(mergedRMSE) <- gsub("RMSE_", "", colnames(mergedRMSE))
 rownames(mergedRMSE) <- mergedRMSE$metabolites; mergedRMSE <- mergedRMSE[, -1]
 
-pdf(file = "./RESULTS/circosMetrics_RMSE.pdf", width = 9, height = 8)
-circos.par(gap.after = c(2, 2, 2, 15, 2))
+pdf(file = "./RESULTS/circosMetrics_RMSE_split.pdf", width = 9, height = 8)
+circos.par(gap.after = c(2, 15))
 circos.heatmap(mergedRMSE, col = col_funRMSE, 
                bg.border = "black", 
                bg.lwd = 1, 
@@ -204,7 +208,7 @@ circos.heatmap(mergedRMSE, col = col_funRMSE,
                cell.lwd = 0.25,
                rownames.side = "outside",
                track.height = 0.1,
-               split = split,
+               split = split2,
                show.sector.labels = TRUE,
                dend.side = "inside",
                dend.callback = function(dend, m, si) {
@@ -214,7 +218,7 @@ circos.heatmap(mergedRMSE, col = col_funRMSE,
 
 circos.track(track.index = 2, 
              panel.fun = function(x, y) {
-               if(CELL_META$sector.numeric.index == 4) {
+               if(CELL_META$sector.numeric.index == 2) {
                  cn = rev(colnames(mergedRMSE))
                  n = length(cn)
                  circos.text(rep(CELL_META$cell.xlim[2], n) + convert_x(1, "mm"),
